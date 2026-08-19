@@ -17,3 +17,6 @@ backend/data/chroma/
 
 # Claude Code 本地配置
 .claude/
+
+# 数据库文件（对话历史，不该提交）
+*.db

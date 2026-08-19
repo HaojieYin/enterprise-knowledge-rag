@@ -15,7 +15,8 @@
 - **引用高亮**：回答中标注引用编号，可点击跳转到具体原文片段
 - **流式输出**：回答打字机效果，逐字实时返回
 - **Agent 化查询路由**：大模型自主判断「是否需要检索」，问候/闲聊直接回答、跳过检索
-- **Web 界面**：原生前端聊天界面，支持上传文档、清空对话、显示改写过程
+- **对话历史持久化**：SQLite 存会话和消息，刷新页面不丢；侧边栏支持新建 / 切换 / 删除会话
+- **Web 界面**：原生前端聊天界面，支持上传文档、会话列表、流式输出、显示改写过程
 
 ## 🏗️ 架构图
 
@@ -51,6 +52,7 @@ flowchart TB
 | 重排（Rerank） | 硅基流动 · BAAI/bge-reranker-v2-m3 |
 | 关键词检索（BM25） | rank-bm25 + jieba 中文分词 |
 | 向量数据库 | ChromaDB（本地持久化） |
+| 对话历史存储 | SQLite（Python 内置 sqlite3，零依赖） |
 | 框架 | LangChain 1.x + FastAPI |
 | 前端 | 原生 HTML / CSS / JavaScript |
 
@@ -68,7 +70,7 @@ CCDEMO/
     ├── app/
     │   ├── main.py       # FastAPI 入口
     │   ├── config.py     # 读取 .env 配置
-    │   ├── routers/      # 接口路由（rag / documents / chat）
+    │   ├── routers/      # 接口路由（rag / documents / chat / conversations）
     │   └── services/     # 核心业务逻辑
     │       ├── llm.py            # 大模型封装
     │       ├── embedding.py      # 向量化封装
@@ -76,6 +78,7 @@ CCDEMO/
     │       ├── rerank.py         # 重排模型封装
     │       ├── document.py       # 文档解析 + 切分
     │       ├── vector_store.py   # 向量数据库
+    │       ├── db.py             # SQLite 会话/消息持久化
     │       └── rag.py            # RAG 核心链路（查询路由→改写→检索→生成）
     ├── data/             # 示例文档 + 向量库数据
     └── test_*.py         # 各环节测试脚本
@@ -171,5 +174,6 @@ uvicorn app.main:app --host 127.0.0.1 --port 8000
 
 ## 📝 后续可扩展方向
 
-- [ ] 对话历史持久化到数据库
+- [x] 对话历史持久化到数据库（SQLite）
 - [ ] Docker 容器化部署
+- [ ] 用户登录 / 多用户隔离

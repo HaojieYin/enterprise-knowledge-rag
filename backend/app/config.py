@@ -23,3 +23,5 @@ RERANK_MODEL = os.getenv("RERANK_MODEL", "BAAI/bge-reranker-v2-m3")
 # 数据目录：存放文档和向量库
 DATA_DIR = PROJECT_ROOT / "backend" / "data"
 CHROMA_DIR = DATA_DIR / "chroma"
+# 对话历史数据库（SQLite）
+DB_PATH = DATA_DIR / "chat.db"

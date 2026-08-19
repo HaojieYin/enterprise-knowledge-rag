@@ -27,27 +27,66 @@
     background: linear-gradient(135deg, #4f46e5, #7c3aed);
     color: white;
     padding: 18px 32px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
   }
   header h1 { font-size: 20px; font-weight: 600; }
   header p { font-size: 13px; opacity: 0.85; margin-top: 4px; }
-  .header-btn {
-    background: rgba(255,255,255,0.15);
-    color: white;
-    border: 1px solid rgba(255,255,255,0.3);
-    padding: 7px 14px;
+  .body {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+  }
+  /* ===== 左侧会话列表 ===== */
+  .sidebar {
+    width: 260px;
+    background: var(--card);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .sidebar-head {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-head .btn { width: 100%; }
+  .conv-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+  }
+  .conv-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 10px;
     border-radius: 8px;
-    font-size: 13px;
     cursor: pointer;
+    font-size: 14px;
+    margin-bottom: 2px;
+  }
+  .conv-item:hover { background: #f3f4f6; }
+  .conv-item.active { background: #eef2ff; }
+  .conv-title {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .header-btn:hover { background: rgba(255,255,255,0.25); }
+  .conv-del {
+    border: none;
+    background: none;
+    color: var(--text-light);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 4px;
+    visibility: hidden;
+  }
+  .conv-item:hover .conv-del { visibility: visible; }
+  .conv-del:hover { color: #ef4444; }
+  .conv-empty { color: var(--text-light); text-align: center; font-size: 13px; padding: 24px 0; }
+  /* ===== 右侧主区 ===== */
   .container {
-    max-width: 920px;
-    width: 100%;
-    margin: 0 auto;
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -180,35 +219,45 @@
 </head>
 <body>
 <header>
-  <div>
-    <h1>📚 企业知识库 RAG 系统</h1>
-    <p>上传企业文档，用自然语言提问，AI 基于文档内容回答（支持多轮对话）</p>
-  </div>
-  <button class="header-btn" onclick="clearChat()">🗑 清空对话</button>
+  <h1>📚 企业知识库 RAG 系统</h1>
+  <p>上传企业文档，用自然语言提问，AI 基于文档内容回答（支持多轮对话、历史持久化）</p>
 </header>
 
-<div class="container">
-  <div class="upload-card">
-    <label>📄 上传文档：</label>
-    <input type="file" id="file" accept=".txt,.md,.pdf,.docx">
-    <button class="btn" id="uploadBtn" onclick="uploadFile()">上传并索引</button>
-    <div id="uploadStatus">支持 txt / md / pdf / docx 格式</div>
-  </div>
-
-  <div class="chat">
-    <div id="messages">
-      <div class="empty-hint">👋 你好！我已经加载了示例文档（员工手册、IT 规范）。<br>可以直接提问，比如「报销超过5000元需要谁审批？」<br>也支持追问，比如先问「晋升条件」，再问「那报销呢？」</div>
+<div class="body">
+  <!-- 左侧会话列表 -->
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <button class="btn" onclick="newConversation()">＋ 新建对话</button>
     </div>
-    <div class="input-bar">
-      <textarea id="question" rows="1" placeholder="输入你的问题，Enter 发送，Shift+Enter 换行"></textarea>
-      <button class="btn" id="sendBtn" onclick="sendMessage()">发送</button>
+    <div class="conv-list" id="conversationList">
+      <div class="conv-empty">加载中...</div>
+    </div>
+  </aside>
+
+  <!-- 右侧主区 -->
+  <div class="container">
+    <div class="upload-card">
+      <label>📄 上传文档：</label>
+      <input type="file" id="file" accept=".txt,.md,.pdf,.docx">
+      <button class="btn" id="uploadBtn" onclick="uploadFile()">上传并索引</button>
+      <div id="uploadStatus">支持 txt / md / pdf / docx 格式</div>
+    </div>
+
+    <div class="chat">
+      <div id="messages">
+        <div class="empty-hint">👋 你好！我已经加载了示例文档（员工手册、IT 规范）。<br>可以直接提问，比如「报销超过5000元需要谁审批？」<br>也支持追问，比如先问「晋升条件」，再问「那报销呢？」</div>
+      </div>
+      <div class="input-bar">
+        <textarea id="question" rows="1" placeholder="输入你的问题，Enter 发送，Shift+Enter 换行"></textarea>
+        <button class="btn" id="sendBtn" onclick="sendMessage()">发送</button>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
-  // 对话历史：记录每一轮的用户问题和助手回答
-  let history = [];
+  // 当前会话 ID（null 表示还没开始，或刚点了「新建对话」）
+  let currentConversationId = null;
 
   // 转义 HTML，防止大模型输出里的 < > 被当成标签
   function escapeHtml(s) {
@@ -310,6 +359,77 @@
     }
   }
 
+  function clearMessages() {
+    const container = document.getElementById('messages');
+    container.innerHTML = '<div class="empty-hint">👋 开始新的对话吧，可以提问任何公司制度相关的问题。</div>';
+  }
+
+  // ============ 会话列表管理 ============
+  async function loadConversations() {
+    const resp = await fetch('/api/conversations');
+    const convs = await resp.json();
+    const list = document.getElementById('conversationList');
+    list.innerHTML = '';
+
+    if (!convs.length) {
+      list.innerHTML = '<div class="conv-empty">暂无历史对话</div>';
+      return;
+    }
+
+    convs.forEach(c => {
+      const item = document.createElement('div');
+      item.className = 'conv-item' + (c.id === currentConversationId ? ' active' : '');
+
+      const title = document.createElement('span');
+      title.className = 'conv-title';
+      title.textContent = c.title || '新对话';
+      title.onclick = () => switchConversation(c.id);
+
+      const del = document.createElement('button');
+      del.className = 'conv-del';
+      del.textContent = '×';
+      del.title = '删除会话';
+      del.onclick = (e) => { e.stopPropagation(); deleteConversation(c.id); };
+
+      item.appendChild(title);
+      item.appendChild(del);
+      list.appendChild(item);
+    });
+  }
+
+  async function switchConversation(id) {
+    currentConversationId = id;
+    clearMessages();
+    // 加载该会话的历史消息（历史里没存检索来源，所以去掉引用标记显示纯文本）
+    const resp = await fetch('/api/conversations/' + id + '/messages');
+    const msgs = await resp.json();
+    msgs.forEach(m => {
+      if (m.role === 'assistant') {
+        addMessage('assistant', m.content.replace(/\[\d+\]/g, ''));
+      } else {
+        addMessage('user', m.content);
+      }
+    });
+    loadConversations(); // 刷新高亮
+  }
+
+  function newConversation() {
+    currentConversationId = null;
+    clearMessages();
+    loadConversations();
+  }
+
+  async function deleteConversation(id) {
+    if (!confirm('确定删除这个会话吗？')) return;
+    await fetch('/api/conversations/' + id, { method: 'DELETE' });
+    if (id === currentConversationId) {
+      currentConversationId = null;
+      clearMessages();
+    }
+    loadConversations();
+  }
+
+  // ============ 发送消息（流式） ============
   async function sendMessage() {
     const input = document.getElementById('question');
     const question = input.value.trim();
@@ -338,11 +458,11 @@
     let meta = null;
 
     try {
-      // 流式请求：把历史一起发给后端
+      // 流式请求：把当前会话 ID 发给后端（后端负责从数据库读历史）
       const resp = await fetch('/api/rag/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, history })
+        body: JSON.stringify({ question, conversation_id: currentConversationId })
       });
 
       if (!resp.ok) {
@@ -366,6 +486,8 @@
           const obj = JSON.parse(line);
           if (obj.type === 'meta') {
             meta = obj;
+            // 后端可能新建了会话，把 ID 记下来
+            if (obj.conversation_id) currentConversationId = obj.conversation_id;
             // 显示「是否检索」徽章（Agent 决策可视化）
             const badge = document.createElement('div');
             badge.className = 'search-badge' + (obj.searched ? ' searched' : '');
@@ -396,9 +518,8 @@
       }
       bindCitations(msg);
 
-      // 更新历史（存纯文本，去掉引用标记，避免下一轮编号混淆）
-      history.push({ role: 'user', content: question });
-      history.push({ role: 'assistant', content: fullText.replace(/\[\d+\]/g, '') });
+      // 刷新会话列表（可能新建了会话，标题/顺序变了）
+      loadConversations();
     } catch (e) {
       bubble.textContent = '网络错误：' + e.message;
     } finally {
@@ -408,6 +529,7 @@
     }
   }
 
+  // ============ 上传文档 ============
   async function uploadFile() {
     const fileInput = document.getElementById('file');
     const file = fileInput.files[0];
@@ -442,18 +564,15 @@
     }
   }
 
-  function clearChat() {
-    history = [];
-    const container = document.getElementById('messages');
-    container.innerHTML = '<div class="empty-hint">👋 对话已清空，可以重新开始提问。</div>';
-  }
-
   document.getElementById('question').addEventListener('keydown', function(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
   });
+
+  // 页面加载时拉取会话列表
+  loadConversations();
 </script>
 </body>
 </html>
