@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>企业知识库 RAG 系统</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --primary: #4f46e5;
+    --primary-dark: #4338ca;
+    --bg: #f4f5f7;
+    --card: #ffffff;
+    --text: #1f2937;
+    --text-light: #6b7280;
+    --border: #e5e7eb;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: white;
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  header h1 { font-size: 20px; font-weight: 600; }
+  header p { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+  .header-btn {
+    background: rgba(255,255,255,0.15);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.3);
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .header-btn:hover { background: rgba(255,255,255,0.25); }
+  .container {
+    max-width: 920px;
+    width: 100%;
+    margin: 0 auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 18px;
+    gap: 14px;
+    min-height: 0;
+  }
+  .upload-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .upload-card label { font-size: 14px; font-weight: 500; white-space: nowrap; }
+  .upload-card input[type="file"] { font-size: 13px; flex: 1; min-width: 180px; }
+  .btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 9px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--primary-dark); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  #uploadStatus { font-size: 13px; color: var(--text-light); width: 100%; }
+  .chat {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .msg { max-width: 82%; display: flex; flex-direction: column; gap: 5px; }
+  .msg.user { align-self: flex-end; align-items: flex-end; }
+  .msg.assistant { align-self: flex-start; align-items: flex-start; }
+  .bubble {
+    padding: 11px 15px;
+    border-radius: 12px;
+    font-size: 15px;
+    line-height: 1.65;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .msg.user .bubble { background: var(--primary); color: white; border-bottom-right-radius: 4px; }
+  .msg.assistant .bubble { background: #f9fafb; border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+  .rewrite-hint {
+    font-size: 12px;
+    color: #9ca3af;
+    font-style: italic;
+  }
+  .search-badge {
+    display: inline-block;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #f3f4f6;
+    color: var(--text-light);
+  }
+  .search-badge.searched { background: #eef2ff; color: var(--primary); }
+  .cite {
+    font-size: 11px;
+    color: var(--primary);
+    background: #eef2ff;
+    border-radius: 4px;
+    padding: 1px 5px;
+    cursor: pointer;
+    vertical-align: super;
+    font-weight: 600;
+    margin: 0 1px;
+  }
+  .cite:hover { background: #c7d2fe; }
+  .sources { display: flex; flex-direction: column; gap: 8px; }
+  .source-card {
+    background: #f9fafb;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--primary);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 13px;
+  }
+  .source-card .src-head {
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 4px;
+  }
+  .source-card .src-snippet {
+    color: var(--text-light);
+    line-height: 1.6;
+  }
+  .input-bar {
+    display: flex;
+    gap: 10px;
+    padding: 14px 18px;
+    border-top: 1px solid var(--border);
+    align-items: flex-end;
+  }
+  .input-bar textarea {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 14px;
+    resize: none;
+    font-family: inherit;
+    outline: none;
+    max-height: 120px;
+  }
+  .input-bar textarea:focus { border-color: var(--primary); }
+  .empty-hint { color: var(--text-light); text-align: center; font-size: 14px; margin-top: 20px; line-height: 1.7; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>📚 企业知识库 RAG 系统</h1>
+    <p>上传企业文档，用自然语言提问，AI 基于文档内容回答（支持多轮对话）</p>
+  </div>
+  <button class="header-btn" onclick="clearChat()">🗑 清空对话</button>
+</header>
+
+<div class="container">
+  <div class="upload-card">
+    <label>📄 上传文档：</label>
+    <input type="file" id="file" accept=".txt,.md,.pdf,.docx">
+    <button class="btn" id="uploadBtn" onclick="uploadFile()">上传并索引</button>
+    <div id="uploadStatus">支持 txt / md / pdf / docx 格式</div>
+  </div>
+
+  <div class="chat">
+    <div id="messages">
+      <div class="empty-hint">👋 你好！我已经加载了示例文档（员工手册、IT 规范）。<br>可以直接提问，比如「报销超过5000元需要谁审批？」<br>也支持追问，比如先问「晋升条件」，再问「那报销呢？」</div>
+    </div>
+    <div class="input-bar">
+      <textarea id="question" rows="1" placeholder="输入你的问题，Enter 发送，Shift+Enter 换行"></textarea>
+      <button class="btn" id="sendBtn" onclick="sendMessage()">发送</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 对话历史：记录每一轮的用户问题和助手回答
+  let history = [];
+
+  // 转义 HTML，防止大模型输出里的 < > 被当成标签
+  function escapeHtml(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // 从回答里提取被引用的编号，用于只展示「回答实际引用到」的来源
+  function getCitedIds(text) {
+    const ids = new Set();
+    const matches = text.match(/\[(\d+)\]/g);
+    if (matches) {
+      matches.forEach(m => ids.add(parseInt(m.replace(/[\[\]]/g, ''), 10)));
+    }
+    return ids;
+  }
+
+  // 把回答里的 [1] [2] 引用标记渲染成可点击的高亮上标
+  function renderAnswer(text) {
+    let html = escapeHtml(text);
+    html = html.replace(/\[(\d+)\]/g, '<sup class="cite" data-id="$1">[$1]</sup>');
+    return html;
+  }
+
+  // 渲染引用来源卡片（编号 + 文件名 + 原文片段）
+  function renderSources(sources) {
+    const srcDiv = document.createElement('div');
+    srcDiv.className = 'sources';
+    sources.forEach(s => {
+      const card = document.createElement('div');
+      card.className = 'source-card';
+      card.id = 'cite-' + s.id;
+      const head = document.createElement('div');
+      head.className = 'src-head';
+      head.textContent = '[' + s.id + '] ' + s.source;
+      const snippet = document.createElement('div');
+      snippet.className = 'src-snippet';
+      snippet.textContent = s.snippet;
+      card.appendChild(head);
+      card.appendChild(snippet);
+      srcDiv.appendChild(card);
+    });
+    return srcDiv;
+  }
+
+  // 点击引用上标，滚动到对应的来源卡片并高亮
+  function bindCitations(msg) {
+    msg.querySelectorAll('.cite').forEach(el => {
+      el.addEventListener('click', function() {
+        const card = document.getElementById('cite-' + this.dataset.id);
+        if (card) {
+          card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          card.style.background = '#eef2ff';
+          setTimeout(() => card.style.background = '', 1600);
+        }
+      });
+    });
+  }
+
+  function addMessage(role, text, sources, rewrittenQuery) {
+    const container = document.getElementById('messages');
+    const hint = container.querySelector('.empty-hint');
+    if (hint) hint.remove();
+
+    const msg = document.createElement('div');
+    msg.className = 'msg ' + role;
+
+    // 如果发生了问题改写，在回答上方显示提示
+    if (rewrittenQuery) {
+      const hintEl = document.createElement('div');
+      hintEl.className = 'rewrite-hint';
+      hintEl.textContent = '🔍 已理解你的问题为：' + rewrittenQuery;
+      msg.appendChild(hintEl);
+    }
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    // 助手回答渲染引用高亮，用户消息用纯文本
+    if (role === 'assistant') {
+      bubble.innerHTML = renderAnswer(text);
+    } else {
+      bubble.textContent = text;
+    }
+    msg.appendChild(bubble);
+
+    // 只展示回答中实际引用到的来源卡片（说「找不到」时没有引用标记，就不展示）
+    if (role === 'assistant' && sources && sources.length) {
+      const citedIds = getCitedIds(text);
+      const citedSources = sources.filter(s => citedIds.has(s.id));
+      if (citedSources.length) {
+        msg.appendChild(renderSources(citedSources));
+      }
+    }
+
+    container.appendChild(msg);
+    container.scrollTop = container.scrollHeight;
+
+    if (role === 'assistant') {
+      bindCitations(msg);
+    }
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('question');
+    const question = input.value.trim();
+    if (!question) return;
+
+    addMessage('user', question);
+    input.value = '';
+
+    const btn = document.getElementById('sendBtn');
+    btn.disabled = true;
+    btn.textContent = '思考中...';
+
+    // 先创建一个空的助手气泡，用于流式追加回答
+    const container = document.getElementById('messages');
+    const emptyHint = container.querySelector('.empty-hint');
+    if (emptyHint) emptyHint.remove();
+    const msg = document.createElement('div');
+    msg.className = 'msg assistant';
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    msg.appendChild(bubble);
+    container.appendChild(msg);
+    container.scrollTop = container.scrollHeight;
+
+    let fullText = '';
+    let meta = null;
+
+    try {
+      // 流式请求：把历史一起发给后端
+      const resp = await fetch('/api/rag/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question, history })
+      });
+
+      if (!resp.ok) {
+        bubble.textContent = '请求失败：' + resp.status;
+        return;
+      }
+
+      // 逐行读取 NDJSON 流：meta → delta... → done
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop(); // 最后一段可能不完整，留到下一次
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          const obj = JSON.parse(line);
+          if (obj.type === 'meta') {
+            meta = obj;
+            // 显示「是否检索」徽章（Agent 决策可视化）
+            const badge = document.createElement('div');
+            badge.className = 'search-badge' + (obj.searched ? ' searched' : '');
+            badge.textContent = obj.searched ? '🔎 检索知识库回答' : '💬 直接回答（未检索）';
+            msg.insertBefore(badge, bubble);
+            if (obj.rewritten_query && obj.rewritten_query !== question) {
+              const hintEl = document.createElement('div');
+              hintEl.className = 'rewrite-hint';
+              hintEl.textContent = '🔍 已理解你的问题为：' + obj.rewritten_query;
+              msg.insertBefore(hintEl, bubble);
+            }
+          } else if (obj.type === 'delta') {
+            fullText += obj.data;
+            bubble.textContent = fullText; // 打字机效果
+            container.scrollTop = container.scrollHeight;
+          }
+        }
+      }
+
+      // 流结束后，一次性渲染引用高亮 + 来源卡片
+      bubble.innerHTML = renderAnswer(fullText);
+      if (meta && meta.sources && meta.sources.length) {
+        const citedIds = getCitedIds(fullText);
+        const citedSources = meta.sources.filter(s => citedIds.has(s.id));
+        if (citedSources.length) {
+          msg.appendChild(renderSources(citedSources));
+        }
+      }
+      bindCitations(msg);
+
+      // 更新历史（存纯文本，去掉引用标记，避免下一轮编号混淆）
+      history.push({ role: 'user', content: question });
+      history.push({ role: 'assistant', content: fullText.replace(/\[\d+\]/g, '') });
+    } catch (e) {
+      bubble.textContent = '网络错误：' + e.message;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '发送';
+      input.focus();
+    }
+  }
+
+  async function uploadFile() {
+    const fileInput = document.getElementById('file');
+    const file = fileInput.files[0];
+    if (!file) {
+      alert('请先选择一个文件');
+      return;
+    }
+    const status = document.getElementById('uploadStatus');
+    const btn = document.getElementById('uploadBtn');
+    btn.disabled = true;
+    status.textContent = '上传并索引中，请稍候...';
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const resp = await fetch('/api/documents/upload', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await resp.json();
+      if (resp.ok) {
+        status.textContent = '✅ ' + data.message;
+        fileInput.value = '';
+      } else {
+        status.textContent = '❌ ' + (data.detail || '上传失败');
+      }
+    } catch (e) {
+      status.textContent = '❌ 上传失败：' + e.message;
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function clearChat() {
+    history = [];
+    const container = document.getElementById('messages');
+    container.innerHTML = '<div class="empty-hint">👋 对话已清空，可以重新开始提问。</div>';
+  }
+
+  document.getElementById('question').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+</script>
+</body>
+</html>
