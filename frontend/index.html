@@ -248,6 +248,7 @@
     document.getElementById('loginView').style.display = 'none';
     document.getElementById('appView').style.display = 'flex';
     document.getElementById('usernameLabel').textContent = username;
+    clearMessages();  // 清空聊天区，避免残留上一个用户的内容
     loadConversations();
   }
   function showLoginError(msg) {
@@ -303,6 +304,7 @@
     currentConversationId = null;
     localStorage.removeItem('token');
     localStorage.removeItem('username');
+    clearMessages();  // 清空聊天区，退出时也清
     showLogin();
   }
 
