@@ -26,15 +26,63 @@
   header {
     background: linear-gradient(135deg, #4f46e5, #7c3aed);
     color: white;
-    padding: 18px 32px;
+    padding: 16px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
   header h1 { font-size: 20px; font-weight: 600; }
   header p { font-size: 13px; opacity: 0.85; margin-top: 4px; }
-  .body {
+  .user-box { display: flex; align-items: center; gap: 12px; }
+  .username { font-size: 14px; font-weight: 500; }
+  .logout-btn {
+    background: rgba(255,255,255,0.15);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.3);
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .logout-btn:hover { background: rgba(255,255,255,0.28); }
+  /* ===== 登录/注册视图 ===== */
+  .login-view {
     flex: 1;
     display: flex;
-    min-height: 0;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
   }
+  .login-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 40px 36px;
+    width: 360px;
+    max-width: 100%;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .login-card h2 { font-size: 20px; text-align: center; }
+  .login-sub { color: var(--text-light); font-size: 13px; text-align: center; margin-top: -6px; }
+  .login-card input {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 11px 14px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+  }
+  .login-card input:focus { border-color: var(--primary); }
+  .login-actions { display: flex; gap: 10px; }
+  .login-actions .btn { flex: 1; }
+  #registerBtn { background: #fff; color: var(--primary); border: 1px solid var(--primary); }
+  #registerBtn:hover { background: #f5f6ff; }
+  .login-error { color: #ef4444; font-size: 13px; text-align: center; min-height: 18px; }
+  #appView { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .body { flex: 1; display: flex; min-height: 0; }
   /* ===== 左侧会话列表 ===== */
   .sidebar {
     width: 260px;
@@ -44,16 +92,9 @@
     flex-direction: column;
     min-height: 0;
   }
-  .sidebar-head {
-    padding: 12px 14px;
-    border-bottom: 1px solid var(--border);
-  }
+  .sidebar-head { padding: 12px 14px; border-bottom: 1px solid var(--border); }
   .sidebar-head .btn { width: 100%; }
-  .conv-list {
-    flex: 1;
-    overflow-y: auto;
-    padding: 8px;
-  }
+  .conv-list { flex: 1; overflow-y: auto; padding: 8px; }
   .conv-item {
     display: flex;
     align-items: center;
@@ -66,205 +107,221 @@
   }
   .conv-item:hover { background: #f3f4f6; }
   .conv-item.active { background: #eef2ff; }
-  .conv-title {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
+  .conv-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .conv-del {
-    border: none;
-    background: none;
-    color: var(--text-light);
-    font-size: 18px;
-    line-height: 1;
-    cursor: pointer;
-    padding: 0 4px;
+    border: none; background: none; color: var(--text-light);
+    font-size: 18px; line-height: 1; cursor: pointer; padding: 0 4px;
     visibility: hidden;
   }
   .conv-item:hover .conv-del { visibility: visible; }
   .conv-del:hover { color: #ef4444; }
   .conv-empty { color: var(--text-light); text-align: center; font-size: 13px; padding: 24px 0; }
   /* ===== 右侧主区 ===== */
-  .container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: 18px;
-    gap: 14px;
-    min-height: 0;
-  }
+  .container { flex: 1; display: flex; flex-direction: column; padding: 18px; gap: 14px; min-height: 0; }
   .upload-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 14px 18px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px 18px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
   }
   .upload-card label { font-size: 14px; font-weight: 500; white-space: nowrap; }
   .upload-card input[type="file"] { font-size: 13px; flex: 1; min-width: 180px; }
   .btn {
-    background: var(--primary);
-    color: white;
-    border: none;
-    padding: 9px 18px;
-    border-radius: 8px;
-    font-size: 14px;
-    cursor: pointer;
-    transition: background 0.15s;
-    white-space: nowrap;
+    background: var(--primary); color: white; border: none; padding: 9px 18px;
+    border-radius: 8px; font-size: 14px; cursor: pointer; transition: background 0.15s; white-space: nowrap;
   }
   .btn:hover { background: var(--primary-dark); }
   .btn:disabled { opacity: 0.5; cursor: not-allowed; }
   #uploadStatus { font-size: 13px; color: var(--text-light); width: 100%; }
   .chat {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    overflow: hidden;
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden;
   }
-  #messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
+  #messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
   .msg { max-width: 82%; display: flex; flex-direction: column; gap: 5px; }
   .msg.user { align-self: flex-end; align-items: flex-end; }
   .msg.assistant { align-self: flex-start; align-items: flex-start; }
   .bubble {
-    padding: 11px 15px;
-    border-radius: 12px;
-    font-size: 15px;
-    line-height: 1.65;
-    white-space: pre-wrap;
-    word-break: break-word;
+    padding: 11px 15px; border-radius: 12px; font-size: 15px; line-height: 1.65;
+    white-space: pre-wrap; word-break: break-word;
   }
   .msg.user .bubble { background: var(--primary); color: white; border-bottom-right-radius: 4px; }
   .msg.assistant .bubble { background: #f9fafb; border: 1px solid var(--border); border-bottom-left-radius: 4px; }
-  .rewrite-hint {
-    font-size: 12px;
-    color: #9ca3af;
-    font-style: italic;
-  }
+  .rewrite-hint { font-size: 12px; color: #9ca3af; font-style: italic; }
   .search-badge {
-    display: inline-block;
-    font-size: 12px;
-    padding: 2px 8px;
-    border-radius: 999px;
-    background: #f3f4f6;
-    color: var(--text-light);
+    display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 999px;
+    background: #f3f4f6; color: var(--text-light);
   }
   .search-badge.searched { background: #eef2ff; color: var(--primary); }
   .cite {
-    font-size: 11px;
-    color: var(--primary);
-    background: #eef2ff;
-    border-radius: 4px;
-    padding: 1px 5px;
-    cursor: pointer;
-    vertical-align: super;
-    font-weight: 600;
-    margin: 0 1px;
+    font-size: 11px; color: var(--primary); background: #eef2ff; border-radius: 4px;
+    padding: 1px 5px; cursor: pointer; vertical-align: super; font-weight: 600; margin: 0 1px;
   }
   .cite:hover { background: #c7d2fe; }
   .sources { display: flex; flex-direction: column; gap: 8px; }
   .source-card {
-    background: #f9fafb;
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--primary);
-    border-radius: 8px;
-    padding: 9px 12px;
-    font-size: 13px;
+    background: #f9fafb; border: 1px solid var(--border); border-left: 3px solid var(--primary);
+    border-radius: 8px; padding: 9px 12px; font-size: 13px;
   }
-  .source-card .src-head {
-    font-weight: 600;
-    color: var(--primary);
-    margin-bottom: 4px;
-  }
-  .source-card .src-snippet {
-    color: var(--text-light);
-    line-height: 1.6;
-  }
-  .input-bar {
-    display: flex;
-    gap: 10px;
-    padding: 14px 18px;
-    border-top: 1px solid var(--border);
-    align-items: flex-end;
-  }
+  .source-card .src-head { font-weight: 600; color: var(--primary); margin-bottom: 4px; }
+  .source-card .src-snippet { color: var(--text-light); line-height: 1.6; }
+  .input-bar { display: flex; gap: 10px; padding: 14px 18px; border-top: 1px solid var(--border); align-items: flex-end; }
   .input-bar textarea {
-    flex: 1;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 14px;
-    font-size: 14px;
-    resize: none;
-    font-family: inherit;
-    outline: none;
-    max-height: 120px;
+    flex: 1; border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px;
+    font-size: 14px; resize: none; font-family: inherit; outline: none; max-height: 120px;
   }
   .input-bar textarea:focus { border-color: var(--primary); }
   .empty-hint { color: var(--text-light); text-align: center; font-size: 14px; margin-top: 20px; line-height: 1.7; }
 </style>
 </head>
 <body>
-<header>
-  <h1>📚 企业知识库 RAG 系统</h1>
-  <p>上传企业文档，用自然语言提问，AI 基于文档内容回答（支持多轮对话、历史持久化）</p>
-</header>
-
-<div class="body">
-  <!-- 左侧会话列表 -->
-  <aside class="sidebar">
-    <div class="sidebar-head">
-      <button class="btn" onclick="newConversation()">＋ 新建对话</button>
+<!-- 登录/注册视图 -->
+<div id="loginView" class="login-view" style="display:none">
+  <div class="login-card">
+    <h2>📚 企业知识库 RAG 系统</h2>
+    <p class="login-sub">登录后开始使用（没账号就注册一个）</p>
+    <input id="loginUsername" placeholder="用户名">
+    <input id="loginPassword" type="password" placeholder="密码">
+    <div class="login-actions">
+      <button class="btn" id="loginBtn" onclick="doLogin()">登录</button>
+      <button class="btn" id="registerBtn" onclick="doRegister()">注册</button>
     </div>
-    <div class="conv-list" id="conversationList">
-      <div class="conv-empty">加载中...</div>
-    </div>
-  </aside>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
 
-  <!-- 右侧主区 -->
-  <div class="container">
-    <div class="upload-card">
-      <label>📄 上传文档：</label>
-      <input type="file" id="file" accept=".txt,.md,.pdf,.docx">
-      <button class="btn" id="uploadBtn" onclick="uploadFile()">上传并索引</button>
-      <div id="uploadStatus">支持 txt / md / pdf / docx 格式</div>
+<!-- 主应用视图（登录后可见） -->
+<div id="appView" style="display:none">
+  <header>
+    <div>
+      <h1>📚 企业知识库 RAG 系统</h1>
+      <p>上传企业文档，用自然语言提问，AI 基于文档内容回答（多轮对话、历史持久化）</p>
     </div>
+    <div class="user-box">
+      <span class="username" id="usernameLabel"></span>
+      <button class="logout-btn" onclick="doLogout()">退出登录</button>
+    </div>
+  </header>
 
-    <div class="chat">
-      <div id="messages">
-        <div class="empty-hint">👋 你好！我已经加载了示例文档（员工手册、IT 规范）。<br>可以直接提问，比如「报销超过5000元需要谁审批？」<br>也支持追问，比如先问「晋升条件」，再问「那报销呢？」</div>
+  <div class="body">
+    <aside class="sidebar">
+      <div class="sidebar-head">
+        <button class="btn" onclick="newConversation()">＋ 新建对话</button>
       </div>
-      <div class="input-bar">
-        <textarea id="question" rows="1" placeholder="输入你的问题，Enter 发送，Shift+Enter 换行"></textarea>
-        <button class="btn" id="sendBtn" onclick="sendMessage()">发送</button>
+      <div class="conv-list" id="conversationList">
+        <div class="conv-empty">加载中...</div>
+      </div>
+    </aside>
+
+    <div class="container">
+      <div class="upload-card">
+        <label>📄 上传文档：</label>
+        <input type="file" id="file" accept=".txt,.md,.pdf,.docx">
+        <button class="btn" id="uploadBtn" onclick="uploadFile()">上传并索引</button>
+        <div id="uploadStatus">支持 txt / md / pdf / docx 格式</div>
+      </div>
+
+      <div class="chat">
+        <div id="messages">
+          <div class="empty-hint">👋 你好！我已经加载了示例文档（员工手册、IT 规范）。<br>可以直接提问，比如「报销超过5000元需要谁审批？」<br>也支持追问，比如先问「晋升条件」，再问「那报销呢？」</div>
+        </div>
+        <div class="input-bar">
+          <textarea id="question" rows="1" placeholder="输入你的问题，Enter 发送，Shift+Enter 换行"></textarea>
+          <button class="btn" id="sendBtn" onclick="sendMessage()">发送</button>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
 <script>
+  // ============ 登录状态 ============
+  let token = localStorage.getItem('token');
+  let username = localStorage.getItem('username');
   // 当前会话 ID（null 表示还没开始，或刚点了「新建对话」）
   let currentConversationId = null;
 
-  // 转义 HTML，防止大模型输出里的 < > 被当成标签
+  // ============ 认证相关 ============
+  function showLogin() {
+    document.getElementById('loginView').style.display = 'flex';
+    document.getElementById('appView').style.display = 'none';
+  }
+  function showApp() {
+    document.getElementById('loginView').style.display = 'none';
+    document.getElementById('appView').style.display = 'flex';
+    document.getElementById('usernameLabel').textContent = username;
+    loadConversations();
+  }
+  function showLoginError(msg) {
+    document.getElementById('loginError').textContent = msg;
+  }
+  async function doLogin() {
+    const u = document.getElementById('loginUsername').value.trim();
+    const p = document.getElementById('loginPassword').value;
+    if (!u || !p) { showLoginError('请输入用户名和密码'); return; }
+    const resp = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: u, password: p })
+    });
+    const data = await resp.json();
+    if (resp.ok) {
+      token = data.token;
+      username = data.username;
+      localStorage.setItem('token', token);
+      localStorage.setItem('username', username);
+      showLoginError('');
+      document.getElementById('loginPassword').value = '';
+      showApp();
+    } else {
+      showLoginError(data.detail || '登录失败');
+    }
+  }
+  async function doRegister() {
+    const u = document.getElementById('loginUsername').value.trim();
+    const p = document.getElementById('loginPassword').value;
+    if (!u || !p) { showLoginError('请输入用户名和密码'); return; }
+    const resp = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: u, password: p })
+    });
+    const data = await resp.json();
+    if (resp.ok) {
+      token = data.token;
+      username = data.username;
+      localStorage.setItem('token', token);
+      localStorage.setItem('username', username);
+      showLoginError('');
+      document.getElementById('loginPassword').value = '';
+      showApp();
+    } else {
+      showLoginError(data.detail || '注册失败');
+    }
+  }
+  function doLogout() {
+    token = null;
+    username = null;
+    currentConversationId = null;
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    showLogin();
+  }
+
+  // 统一的请求封装：自动带上登录 token，遇到 401 就退回登录页
+  async function fetchWithAuth(url, options = {}) {
+    const headers = { ...(options.headers || {}) };
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    const resp = await fetch(url, { ...options, headers });
+    if (resp.status === 401) {
+      doLogout();
+      throw new Error('登录已过期');
+    }
+    return resp;
+  }
+
+  // ============ 工具函数 ============
   function escapeHtml(s) {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
-
-  // 从回答里提取被引用的编号，用于只展示「回答实际引用到」的来源
   function getCitedIds(text) {
     const ids = new Set();
     const matches = text.match(/\[(\d+)\]/g);
@@ -273,15 +330,11 @@
     }
     return ids;
   }
-
-  // 把回答里的 [1] [2] 引用标记渲染成可点击的高亮上标
   function renderAnswer(text) {
     let html = escapeHtml(text);
     html = html.replace(/\[(\d+)\]/g, '<sup class="cite" data-id="$1">[$1]</sup>');
     return html;
   }
-
-  // 渲染引用来源卡片（编号 + 文件名 + 原文片段）
   function renderSources(sources) {
     const srcDiv = document.createElement('div');
     srcDiv.className = 'sources';
@@ -301,8 +354,6 @@
     });
     return srcDiv;
   }
-
-  // 点击引用上标，滚动到对应的来源卡片并高亮
   function bindCitations(msg) {
     msg.querySelectorAll('.cite').forEach(el => {
       el.addEventListener('click', function() {
@@ -315,7 +366,6 @@
       });
     });
   }
-
   function addMessage(role, text, sources, rewrittenQuery) {
     const container = document.getElementById('messages');
     const hint = container.querySelector('.empty-hint');
@@ -324,7 +374,6 @@
     const msg = document.createElement('div');
     msg.className = 'msg ' + role;
 
-    // 如果发生了问题改写，在回答上方显示提示
     if (rewrittenQuery) {
       const hintEl = document.createElement('div');
       hintEl.className = 'rewrite-hint';
@@ -334,7 +383,6 @@
 
     const bubble = document.createElement('div');
     bubble.className = 'bubble';
-    // 助手回答渲染引用高亮，用户消息用纯文本
     if (role === 'assistant') {
       bubble.innerHTML = renderAnswer(text);
     } else {
@@ -342,7 +390,6 @@
     }
     msg.appendChild(bubble);
 
-    // 只展示回答中实际引用到的来源卡片（说「找不到」时没有引用标记，就不展示）
     if (role === 'assistant' && sources && sources.length) {
       const citedIds = getCitedIds(text);
       const citedSources = sources.filter(s => citedIds.has(s.id));
@@ -358,7 +405,6 @@
       bindCitations(msg);
     }
   }
-
   function clearMessages() {
     const container = document.getElementById('messages');
     container.innerHTML = '<div class="empty-hint">👋 开始新的对话吧，可以提问任何公司制度相关的问题。</div>';
@@ -366,51 +412,58 @@
 
   // ============ 会话列表管理 ============
   async function loadConversations() {
-    const resp = await fetch('/api/conversations');
-    const convs = await resp.json();
-    const list = document.getElementById('conversationList');
-    list.innerHTML = '';
+    try {
+      const resp = await fetchWithAuth('/api/conversations');
+      const convs = await resp.json();
+      const list = document.getElementById('conversationList');
+      list.innerHTML = '';
 
-    if (!convs.length) {
-      list.innerHTML = '<div class="conv-empty">暂无历史对话</div>';
-      return;
+      if (!convs.length) {
+        list.innerHTML = '<div class="conv-empty">暂无历史对话</div>';
+        return;
+      }
+
+      convs.forEach(c => {
+        const item = document.createElement('div');
+        item.className = 'conv-item' + (c.id === currentConversationId ? ' active' : '');
+
+        const title = document.createElement('span');
+        title.className = 'conv-title';
+        title.textContent = c.title || '新对话';
+        title.onclick = () => switchConversation(c.id);
+
+        const del = document.createElement('button');
+        del.className = 'conv-del';
+        del.textContent = '×';
+        del.title = '删除会话';
+        del.onclick = (e) => { e.stopPropagation(); deleteConversation(c.id); };
+
+        item.appendChild(title);
+        item.appendChild(del);
+        list.appendChild(item);
+      });
+    } catch (e) {
+      // 401 已由 fetchWithAuth 处理（退回登录），这里静默
     }
-
-    convs.forEach(c => {
-      const item = document.createElement('div');
-      item.className = 'conv-item' + (c.id === currentConversationId ? ' active' : '');
-
-      const title = document.createElement('span');
-      title.className = 'conv-title';
-      title.textContent = c.title || '新对话';
-      title.onclick = () => switchConversation(c.id);
-
-      const del = document.createElement('button');
-      del.className = 'conv-del';
-      del.textContent = '×';
-      del.title = '删除会话';
-      del.onclick = (e) => { e.stopPropagation(); deleteConversation(c.id); };
-
-      item.appendChild(title);
-      item.appendChild(del);
-      list.appendChild(item);
-    });
   }
 
   async function switchConversation(id) {
     currentConversationId = id;
     clearMessages();
-    // 加载该会话的历史消息（历史里没存检索来源，所以去掉引用标记显示纯文本）
-    const resp = await fetch('/api/conversations/' + id + '/messages');
-    const msgs = await resp.json();
-    msgs.forEach(m => {
-      if (m.role === 'assistant') {
-        addMessage('assistant', m.content.replace(/\[\d+\]/g, ''));
-      } else {
-        addMessage('user', m.content);
-      }
-    });
-    loadConversations(); // 刷新高亮
+    try {
+      const resp = await fetchWithAuth('/api/conversations/' + id + '/messages');
+      const msgs = await resp.json();
+      msgs.forEach(m => {
+        if (m.role === 'assistant') {
+          addMessage('assistant', m.content, m.sources);
+        } else {
+          addMessage('user', m.content);
+        }
+      });
+      loadConversations(); // 刷新高亮
+    } catch (e) {
+      // 401 已处理
+    }
   }
 
   function newConversation() {
@@ -421,12 +474,16 @@
 
   async function deleteConversation(id) {
     if (!confirm('确定删除这个会话吗？')) return;
-    await fetch('/api/conversations/' + id, { method: 'DELETE' });
-    if (id === currentConversationId) {
-      currentConversationId = null;
-      clearMessages();
+    try {
+      await fetchWithAuth('/api/conversations/' + id, { method: 'DELETE' });
+      if (id === currentConversationId) {
+        currentConversationId = null;
+        clearMessages();
+      }
+      loadConversations();
+    } catch (e) {
+      // 401 已处理
     }
-    loadConversations();
   }
 
   // ============ 发送消息（流式） ============
@@ -442,7 +499,6 @@
     btn.disabled = true;
     btn.textContent = '思考中...';
 
-    // 先创建一个空的助手气泡，用于流式追加回答
     const container = document.getElementById('messages');
     const emptyHint = container.querySelector('.empty-hint');
     if (emptyHint) emptyHint.remove();
@@ -458,8 +514,7 @@
     let meta = null;
 
     try {
-      // 流式请求：把当前会话 ID 发给后端（后端负责从数据库读历史）
-      const resp = await fetch('/api/rag/stream', {
+      const resp = await fetchWithAuth('/api/rag/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question, conversation_id: currentConversationId })
@@ -470,7 +525,6 @@
         return;
       }
 
-      // 逐行读取 NDJSON 流：meta → delta... → done
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
@@ -479,16 +533,14 @@
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
-        buffer = lines.pop(); // 最后一段可能不完整，留到下一次
+        buffer = lines.pop();
 
         for (const line of lines) {
           if (!line.trim()) continue;
           const obj = JSON.parse(line);
           if (obj.type === 'meta') {
             meta = obj;
-            // 后端可能新建了会话，把 ID 记下来
             if (obj.conversation_id) currentConversationId = obj.conversation_id;
-            // 显示「是否检索」徽章（Agent 决策可视化）
             const badge = document.createElement('div');
             badge.className = 'search-badge' + (obj.searched ? ' searched' : '');
             badge.textContent = obj.searched ? '🔎 检索知识库回答' : '💬 直接回答（未检索）';
@@ -501,13 +553,12 @@
             }
           } else if (obj.type === 'delta') {
             fullText += obj.data;
-            bubble.textContent = fullText; // 打字机效果
+            bubble.textContent = fullText;
             container.scrollTop = container.scrollHeight;
           }
         }
       }
 
-      // 流结束后，一次性渲染引用高亮 + 来源卡片
       bubble.innerHTML = renderAnswer(fullText);
       if (meta && meta.sources && meta.sources.length) {
         const citedIds = getCitedIds(fullText);
@@ -517,11 +568,11 @@
         }
       }
       bindCitations(msg);
-
-      // 刷新会话列表（可能新建了会话，标题/顺序变了）
       loadConversations();
     } catch (e) {
-      bubble.textContent = '网络错误：' + e.message;
+      if (e.message !== '登录已过期') {
+        bubble.textContent = '网络错误：' + e.message;
+      }
     } finally {
       btn.disabled = false;
       btn.textContent = '发送';
@@ -546,7 +597,7 @@
     formData.append('file', file);
 
     try {
-      const resp = await fetch('/api/documents/upload', {
+      const resp = await fetchWithAuth('/api/documents/upload', {
         method: 'POST',
         body: formData
       });
@@ -558,21 +609,28 @@
         status.textContent = '❌ ' + (data.detail || '上传失败');
       }
     } catch (e) {
-      status.textContent = '❌ 上传失败：' + e.message;
+      if (e.message !== '登录已过期') {
+        status.textContent = '❌ 上传失败：' + e.message;
+      }
     } finally {
       btn.disabled = false;
     }
   }
 
+  // ============ 初始化 ============
   document.getElementById('question').addEventListener('keydown', function(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
   });
+  // 登录框按 Enter 直接登录
+  document.getElementById('loginPassword').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); doLogin(); }
+  });
 
-  // 页面加载时拉取会话列表
-  loadConversations();
+  // 有 token 就进主界面，否则显示登录页
+  if (token) showApp(); else showLogin();
 </script>
 </body>
 </html>

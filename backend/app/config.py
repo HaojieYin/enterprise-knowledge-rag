@@ -25,3 +25,7 @@ DATA_DIR = PROJECT_ROOT / "backend" / "data"
 CHROMA_DIR = DATA_DIR / "chroma"
 # 对话历史数据库（SQLite）
 DB_PATH = DATA_DIR / "chat.db"
+
+# JWT 登录配置：签发和校验登录凭证的密钥、凭证有效期（分钟，默认 7 天）
+JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret-change-me")
+JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "10080"))

@@ -1,9 +1,10 @@
 """文档管理接口：上传文档并索引到向量库"""
 from pathlib import Path
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
 from app.config import DATA_DIR
+from app.routers.auth import get_current_user
 from app.services.document import process_document
 from app.services.vector_store import add_documents
 
@@ -11,7 +12,7 @@ router = APIRouter(prefix="/api/documents", tags=["documents"])
 
 
 @router.post("/upload")
-async def upload_document(file: UploadFile = File(...)):
+async def upload_document(file: UploadFile = File(...), user: dict = Depends(get_current_user)):
     """上传文档：保存 -> 切分 -> 向量化 -> 写入向量库
 
     前端用 FormData 上传文件，字段名叫 file

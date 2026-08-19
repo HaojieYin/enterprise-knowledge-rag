@@ -15,8 +15,9 @@
 - **引用高亮**：回答中标注引用编号，可点击跳转到具体原文片段
 - **流式输出**：回答打字机效果，逐字实时返回
 - **Agent 化查询路由**：大模型自主判断「是否需要检索」，问候/闲聊直接回答、跳过检索
-- **对话历史持久化**：SQLite 存会话和消息，刷新页面不丢；侧边栏支持新建 / 切换 / 删除会话
-- **Web 界面**：原生前端聊天界面，支持上传文档、会话列表、流式输出、显示改写过程
+- **对话历史持久化**：SQLite 存会话和消息，刷新页面不丢；侧边栏支持新建 / 切换 / 删除会话（历史消息连检索来源一起存）
+- **用户登录**：JWT 认证 + 密码加盐哈希，注册/登录后使用；每个用户只看得到自己的会话（多用户隔离）
+- **Web 界面**：原生前端聊天界面，支持登录、上传文档、会话列表、流式输出、显示改写过程
 
 ## 🏗️ 架构图
 
@@ -53,6 +54,7 @@ flowchart TB
 | 关键词检索（BM25） | rank-bm25 + jieba 中文分词 |
 | 向量数据库 | ChromaDB（本地持久化） |
 | 对话历史存储 | SQLite（Python 内置 sqlite3，零依赖） |
+| 用户认证 | JWT（PyJWT）+ PBKDF2 密码哈希 |
 | 框架 | LangChain 1.x + FastAPI |
 | 前端 | 原生 HTML / CSS / JavaScript |
 
@@ -70,7 +72,7 @@ CCDEMO/
     ├── app/
     │   ├── main.py       # FastAPI 入口
     │   ├── config.py     # 读取 .env 配置
-    │   ├── routers/      # 接口路由（rag / documents / chat / conversations）
+    │   ├── routers/      # 接口路由（auth / rag / documents / chat / conversations）
     │   └── services/     # 核心业务逻辑
     │       ├── llm.py            # 大模型封装
     │       ├── embedding.py      # 向量化封装
@@ -120,6 +122,10 @@ SILICONFLOW_API_KEY=sk-xxx
 SILICONFLOW_BASE_URL=https://api.siliconflow.cn/v1
 EMBEDDING_MODEL=BAAI/bge-m3
 RERANK_MODEL=BAAI/bge-reranker-v2-m3
+
+# JWT 登录（签发登录凭证的密钥，改成随机字符串）
+JWT_SECRET=换成一段随机字符串
+JWT_EXPIRE_MINUTES=10080
 ```
 
 ### 3. 启动后端
@@ -131,8 +137,8 @@ uvicorn app.main:app --host 127.0.0.1 --port 8000
 
 ### 4. 打开前端
 
-浏览器访问 <http://127.0.0.1:8000>，即可看到聊天界面：
-上传文档 → 等索引完成 → 开始提问。
+浏览器访问 <http://127.0.0.1:8000>，即可看到登录页：
+注册一个账号（或登录）→ 上传文档 → 等索引完成 → 开始提问。
 
 ## 🔄 核心流程
 
@@ -174,6 +180,7 @@ uvicorn app.main:app --host 127.0.0.1 --port 8000
 
 ## 📝 后续可扩展方向
 
-- [x] 对话历史持久化到数据库（SQLite）
+- [x] 对话历史持久化到数据库（SQLite，含检索来源）
+- [x] 用户登录 / 多用户隔离（JWT）
 - [ ] Docker 容器化部署
-- [ ] 用户登录 / 多用户隔离
+- [ ] 更精细的效果评估

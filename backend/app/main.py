@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from app.config import PROJECT_ROOT
-from app.routers import chat, conversations, documents, rag
+from app.routers import auth, chat, conversations, documents, rag
 from app.services import db
 
 # 创建 FastAPI 应用实例
@@ -14,6 +14,7 @@ app = FastAPI(
 )
 
 # 挂载各个后端接口
+app.include_router(auth.router)
 app.include_router(chat.router)
 app.include_router(rag.router)
 app.include_router(documents.router)
