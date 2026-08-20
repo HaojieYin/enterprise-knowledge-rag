@@ -29,6 +29,7 @@ def init_db() -> None:
             username TEXT UNIQUE NOT NULL,
             password_hash TEXT NOT NULL,
             salt TEXT NOT NULL,
+            profile TEXT DEFAULT '',
             created_at TEXT NOT NULL
         )
         """
@@ -56,6 +57,9 @@ def init_db() -> None:
         """
     )
     # 迁移：旧版本建的表缺列，补上（老数据不受影响）
+    user_cols = [r["name"] for r in conn.execute("PRAGMA table_info(users)").fetchall()]
+    if "profile" not in user_cols:
+        conn.execute("ALTER TABLE users ADD COLUMN profile TEXT DEFAULT ''")
     conv_cols = [r["name"] for r in conn.execute("PRAGMA table_info(conversations)").fetchall()]
     if "user_id" not in conv_cols:
         conn.execute("ALTER TABLE conversations ADD COLUMN user_id TEXT")
@@ -68,13 +72,13 @@ def init_db() -> None:
 
 # ============ 用户 ============
 
-def create_user(username: str, password_hash: str, salt: str) -> str:
+def create_user(username: str, password_hash: str, salt: str, profile: str = "") -> str:
     """新建用户，返回用户 ID（密码的哈希和盐由认证模块算好再传进来）"""
     user_id = uuid.uuid4().hex
     conn = _connect()
     conn.execute(
-        "INSERT INTO users (id, username, password_hash, salt, created_at) VALUES (?, ?, ?, ?, ?)",
-        (user_id, username, password_hash, salt, datetime.now().isoformat()),
+        "INSERT INTO users (id, username, password_hash, salt, profile, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+        (user_id, username, password_hash, salt, profile, datetime.now().isoformat()),
     )
     conn.commit()
     conn.close()
@@ -95,6 +99,14 @@ def get_user_by_id(user_id: str) -> dict | None:
     row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
     conn.close()
     return dict(row) if row else None
+
+
+def update_profile(user_id: str, profile: str) -> None:
+    """更新用户的长期画像（AI 记住的个人信息）"""
+    conn = _connect()
+    conn.execute("UPDATE users SET profile = ? WHERE id = ?", (profile, user_id))
+    conn.commit()
+    conn.close()
 
 
 # ============ 会话 ============

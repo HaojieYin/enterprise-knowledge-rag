@@ -29,6 +29,47 @@ def build_context(docs: list[Document]) -> str:
     )
 
 
+def _profile_text(profile: str) -> str:
+    """把用户长期画像拼进系统提示词，让 AI 跨会话记得用户是谁"""
+    if not profile:
+        return ""
+    return (
+        f"\n\n【当前用户信息】\n{profile}\n"
+        "（这是系统长期记住的关于该用户的信息。回答时如果涉及用户个人情况，可以自然参考；"
+        "用户问「我叫什么」「我的职位」这类问题时，据此回答。）"
+    )
+
+
+def extract_profile(question: str, answer: str, existing_profile: str) -> str | None:
+    """从这轮对话提取值得长期记住的用户信息，返回更新后的画像；无更新返回 None
+
+    这是「长期记忆」：每轮聊完，让大模型判断用户是否透露了新的个人信息
+    （姓名、职位、部门、偏好等），有就合并进画像，下次提问时再注入。
+    """
+    prompt = f"""你是用户画像提取器。根据这轮对话，判断用户是否透露了值得长期记住的个人信息。
+
+规则：
+1. 只提取用户明确说出的、相对稳定的个人信息（如姓名、职位、部门、城市、偏好等）
+2. 不提取临时的一次性信息（如「我今天想请假」「刚才问了报销」这种）
+3. 如果用户没有透露新的值得记住的信息，只输出「无更新」
+
+已有的画像：
+{existing_profile or "（暂无）"}
+
+这轮对话：
+用户：{question}
+助手：{answer}
+
+请输出：
+- 如果用户透露了新的值得记住的信息，把新旧信息合并，输出一段简洁的完整画像（自然语言）
+- 如果没有新的值得记住的信息，只输出「无更新」"""
+    result = get_llm().invoke(prompt)
+    content = result.content.strip()
+    if not content or content.startswith("无更新"):
+        return None
+    return content
+
+
 def rewrite_question(question: str, history: list[dict]) -> str:
     """多轮对话的关键：把依赖上下文的问题改写成独立问题（指代消解）"""
     history_text = "\n".join(
@@ -106,19 +147,19 @@ def _append_history(messages: list, history: list[dict]) -> list:
     return messages
 
 
-def build_messages(question: str, docs: list[Document], history: list[dict]) -> list:
-    """构建检索场景的消息列表（带资料 + 严格约束提示词）"""
+def build_messages(question: str, docs: list[Document], history: list[dict], profile: str = "") -> list:
+    """构建检索场景的消息列表（带资料 + 严格约束提示词 + 用户画像）"""
     context = build_context(docs)
     user_prompt = f"【资料】\n{context}\n\n【用户问题】\n{question}"
-    messages = [SystemMessage(content=SYSTEM_PROMPT)]
+    messages = [SystemMessage(content=SYSTEM_PROMPT + _profile_text(profile))]
     _append_history(messages, history)
     messages.append(HumanMessage(content=user_prompt))
     return messages
 
 
-def build_chat_messages(question: str, history: list[dict]) -> list:
-    """构建非检索场景的消息列表（不带资料，用友好提示词）"""
-    messages = [SystemMessage(content=SYSTEM_PROMPT_CHAT)]
+def build_chat_messages(question: str, history: list[dict], profile: str = "") -> list:
+    """构建非检索场景的消息列表（不带资料，用友好提示词 + 用户画像）"""
+    messages = [SystemMessage(content=SYSTEM_PROMPT_CHAT + _profile_text(profile))]
     _append_history(messages, history)
     messages.append(HumanMessage(content=question))
     return messages
@@ -136,7 +177,7 @@ def build_sources(docs: list[Document]) -> list[dict]:
     ]
 
 
-def ask(question: str, k: int = 4, history: list[dict] | None = None) -> dict:
+def ask(question: str, k: int = 4, history: list[dict] | None = None, profile: str = "") -> dict:
     """RAG 问答（一次性返回完整回答）
 
     先做查询路由（Agent 决策）：
@@ -147,7 +188,7 @@ def ask(question: str, k: int = 4, history: list[dict] | None = None) -> dict:
 
     if classify_intent(question):
         rewritten_query, docs = retrieve(question, k, history)
-        messages = build_messages(question, docs, history)
+        messages = build_messages(question, docs, history, profile)
         answer = get_llm().invoke(messages)
         return {
             "answer": answer.content,
@@ -156,7 +197,7 @@ def ask(question: str, k: int = 4, history: list[dict] | None = None) -> dict:
             "searched": True,
         }
 
-    messages = build_chat_messages(question, history)
+    messages = build_chat_messages(question, history, profile)
     answer = get_llm().invoke(messages)
     return {
         "answer": answer.content,
@@ -166,7 +207,7 @@ def ask(question: str, k: int = 4, history: list[dict] | None = None) -> dict:
     }
 
 
-def ask_stream(question: str, k: int = 4, history: list[dict] | None = None):
+def ask_stream(question: str, k: int = 4, history: list[dict] | None = None, profile: str = ""):
     """RAG 问答（流式）：生成器，逐段 yield 结果
 
     先做查询路由（Agent 决策），再流式生成。yield 格式（dict）：
@@ -178,7 +219,7 @@ def ask_stream(question: str, k: int = 4, history: list[dict] | None = None):
 
     if classify_intent(question):
         rewritten_query, docs = retrieve(question, k, history)
-        messages = build_messages(question, docs, history)
+        messages = build_messages(question, docs, history, profile)
         meta = {
             "type": "meta",
             "rewritten_query": rewritten_query if history else None,
@@ -186,7 +227,7 @@ def ask_stream(question: str, k: int = 4, history: list[dict] | None = None):
             "searched": True,
         }
     else:
-        messages = build_chat_messages(question, history)
+        messages = build_chat_messages(question, history, profile)
         meta = {
             "type": "meta",
             "rewritten_query": None,

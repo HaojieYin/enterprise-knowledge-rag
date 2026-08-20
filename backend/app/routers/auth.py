@@ -82,7 +82,11 @@ def get_current_user(authorization: str | None = Header(None)) -> dict:
     if not user:
         raise HTTPException(status_code=401, detail="用户不存在")
     # 只把必要字段传给路由，不带密码哈希
-    return {"id": user["id"], "username": user["username"]}
+    return {
+        "id": user["id"],
+        "username": user["username"],
+        "profile": user.get("profile") or "",
+    }
 
 
 # ============ 接口 ============
