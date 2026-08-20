@@ -8,7 +8,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 # 识别「标题行」的正则（匹配行首）
 _HEADER_PATTERNS = [
-    re.compile(r"^#{1,6}\s+\S+"),         # Markdown 标题：## 账号与密码
+    re.compile(r"^#{1,6}\s*\S+"),         # Markdown 标题：## 账号与密码（\s* 兼容「##迟到」这种无空格写法）
     re.compile(r"^[一二三四五六七八九十百]+、"),  # 中文编号：一、二、三、
     re.compile(r"^（[一二三四五六七八九十百]+）"),  # 括号编号：（一）（二）
     re.compile(r"^\d+[.、]\s*\S+"),         # 数字编号：1. / 1、
@@ -66,7 +66,8 @@ def split_by_structure(text: str) -> list[tuple[str, str]]:
             if current_body:
                 sections.append((current_header, "\n".join(current_body)))
             current_header = line.strip()
-            current_body = []
+            # 标题行本身也作为正文第一行保留，避免「光杆标题」（后面无正文）内容丢失
+            current_body = [line.strip()]
         else:
             current_body.append(line)
 
@@ -111,11 +112,13 @@ def process_document(
             continue
 
         if header:
-            # 标题继承：正文较短则整节一块；过长则按句子切，但每块都带标题前缀
-            if len(header) + len(body) + 1 <= chunk_size:
-                pieces = [f"{header}\n{body}"]
+            # 标题继承：split_by_structure 已把标题行保留在正文开头，
+            # 短则整块；过长则去掉开头标题、按句子切，再给每块补回标题前缀
+            if len(body) <= chunk_size:
+                pieces = [body]
             else:
-                pieces = [f"{header}\n{p}" for p in sentence_splitter.split_text(body)]
+                rest = body[len(header):].strip() if body.startswith(header) else body
+                pieces = [f"{header}\n{p}" for p in sentence_splitter.split_text(rest)]
         else:
             # 没有标题的开头部分（如文档标题），按句子切
             pieces = sentence_splitter.split_text(body)
